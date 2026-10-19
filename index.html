@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scan India – State History</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600&family=Young+Serif&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8edf2;--surface:#fff;--ink:#14213d;--muted:#4d5b75;--line:#c5cfdb;--accent:#1d3a6b;--accent-ink:#fff;--saffron:#d98f00;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1624;--surface:#182237;--ink:#eef2f8;--muted:#a3b0c7;--line:#2c3a56;--accent:#f2b84b;--accent-ink:#14213d;--saffron:#f2b84b}}
+:root[data-theme="dark"]{--bg:#0f1624;--surface:#182237;--ink:#eef2f8;--muted:#a3b0c7;--line:#2c3a56;--accent:#f2b84b;--accent-ink:#14213d;--saffron:#f2b84b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Hind,system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1,h2{font-family:"Young Serif",Georgia,serif;font-weight:400;margin:0}
+h1{font-size:1.9rem;line-height:1.2}
+.sub{color:var(--muted);margin:6px 0 18px}
+nav{display:flex;gap:6px;border-bottom:2px solid var(--line);margin-bottom:18px}
+nav button{flex:1;background:none;border:0;border-bottom:4px solid transparent;margin-bottom:-2px;padding:10px 4px;font:600 1rem Hind,sans-serif;color:var(--muted);cursor:pointer}
+nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--saffron)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:11px 18px;font:600 1rem Hind,sans-serif;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.scanner{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:4/3;display:none}
+.scanner.on{display:block}
+.scanner video{width:100%;height:100%;object-fit:cover}
+.scanner::after{content:"";position:absolute;inset:18%;border:3px solid var(--saffron);border-radius:10px}
+input[type=text],select{padding:10px;border:1.5px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:1rem Hind,sans-serif;min-width:0;flex:1}
+.msg{color:var(--muted);min-height:1.5em;margin:8px 0}
+.msg.err{color:#c0392b}
+.card{background:var(--surface);border:1.5px solid var(--line);border-left:8px solid var(--saffron);border-radius:6px;padding:20px;margin-top:20px}
+.card h2{font-size:1.7rem}
+.facts{display:flex;gap:24px;flex-wrap:wrap;margin:10px 0 14px;color:var(--muted)}
+.facts b{display:block;color:var(--ink)}
+.card h3{margin:16px 0 4px;font-size:1rem}
+.card ul{margin:0;padding-left:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.grid button{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:10px;text-align:left;color:var(--ink);font:600 .95rem Hind,sans-serif;cursor:pointer}
+.grid button small{display:block;color:var(--muted);font-weight:400}
+.qr{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:12px;text-align:center;break-inside:avoid}
+.qr div{display:flex;justify-content:center;margin-bottom:6px;background:#fff;padding:6px;border-radius:4px}
+.qr code{font-size:.75rem;color:var(--muted)}
+[hidden]{display:none!important}
+@media print{nav,.noprint,h1,.sub{display:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<main>
+<h1>Scan India: state histories</h1>
+<p class="sub">Point your camera at a state’s QR plaque to read its story.</p>
+
+<nav role="tablist">
+  <button role="tab" id="t-scan" aria-selected="true">Scan</button>
+  <button role="tab" id="t-browse" aria-selected="false">Browse</button>
+  <button role="tab" id="t-qr" aria-selected="false">Print QR codes</button>
+</nav>
+
+<section id="p-scan">
+  <div class="row">
+    <button class="btn" id="startBtn">Start camera</button>
+    <label class="btn alt" for="file">Upload QR image</label>
+    <input type="file" id="file" accept="image/*" hidden>
+  </div>
+  <div class="scanner" id="scanner"><video id="video" playsinline muted></video></div>
+  <p class="msg" id="msg" role="status"></p>
+  <div class="row">
+    <input type="text" id="manual" placeholder="Or type a state code, e.g. GJ" aria-label="State code" maxlength="40">
+    <button class="btn alt" id="goBtn">Show history</button>
+  </div>
+</section>
+
+<section id="p-browse" hidden><div class="grid" id="grid"></div></section>
+
+<section id="p-qr" hidden>
+  <div class="row noprint">
+    <input type="text" id="base" aria-label="Base URL (optional)" placeholder="Optional: your hosted page URL, so phones open it directly">
+    <button class="btn" id="printBtn">Print</button>
+  </div>
+  <p class="msg noprint">Each code holds a link to this page, like <code>…?state=GJ</code>. Anyone can scan it with their phone’s normal camera and the state’s history opens straight away. If the box above is empty, enter the public address where you host this page.</p>
+  <div class="grid" id="qrgrid"></div>
+</section>
+
+<article class="card" id="result" hidden aria-live="polite"></article>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// code, name, capital, formed, history, landmarks
+const S=[
+["AP","Andhra Pradesh","Amaravati",1956,"Home to the Satavahana, Kakatiya and Vijayanagara-era cultures. Andhra State was carved from Madras in 1953 and merged with Telangana in 1956.","Tirumala Temple; Amaravati Stupa; Undavalli Caves"],
+["AR","Arunachal Pradesh","Itanagar",1987,"Known in old texts as the land of the rising sun. It was the North-East Frontier Agency until becoming a Union Territory in 1972 and a state in 1987.","Tawang Monastery; Ita Fort; Parashuram Kund"],
+["AS","Assam","Dispur",1950,"Ruled by the Ahom dynasty for about 600 years until the British annexed it in 1826. It became a state of the Indian Union in 1950.","Kaziranga; Kamakhya Temple; Rang Ghar"],
+["BR","Bihar","Patna",1936,"Seat of Magadha, the Maurya and Gupta empires. Buddha attained enlightenment at Bodh Gaya. Bihar became a separate province in 1936.","Mahabodhi Temple; Nalanda; Vikramshila"],
+["CG","Chhattisgarh","Raipur",2000,"Once part of Dakshina Kosala and later the Kalachuri and Maratha domains. It was separated from Madhya Pradesh on 1 November 2000.","Sirpur; Chitrakote Falls; Bhoramdeo Temple"],
+["GA","Goa","Panaji",1987,"Ruled by the Kadambas and then Portuguese from 1510. India liberated it in 1961, and it gained statehood in 1987.","Basilica of Bom Jesus; Aguada Fort; Se Cathedral"],
+["GJ","Gujarat","Gandhinagar",1960,"Site of Lothal and Dholavira of the Indus Valley Civilisation. Birthplace of Mahatma Gandhi and Sardar Patel, it became a state in 1960.","Dholavira; Rani ki Vav; Somnath Temple"],
+["HR","Haryana","Chandigarh",1966,"Region of Kurukshetra and the Battles of Panipat. It was split from Punjab on 1 November 1966.","Kurukshetra; Panipat; Surajkund"],
+["HP","Himachal Pradesh","Shimla",1971,"Formed from princely hill states after 1948. Shimla was the British summer capital. Full statehood came in 1971.","Kalka–Shimla Railway; Kangra Fort; Hidimba Temple"],
+["JH","Jharkhand","Ranchi",2000,"Home to the Munda and Santhal tribes who led major revolts against colonial rule. Birsa Munda is its icon. Created in 2000.","Baidyanath Dham; Betla; Hundru Falls"],
+["KA","Karnataka","Bengaluru",1956,"Seat of the Chalukyas, Hoysalas and Vijayanagara Empire. Mysore State was formed in 1956 and renamed Karnataka in 1973.","Hampi; Belur and Halebidu; Mysore Palace"],
+["KL","Kerala","Thiruvananthapuram",1956,"A spice-trade hub since antiquity, visited by Arab, Chinese and European traders. Travancore, Cochin and Malabar were united in 1956.","Fort Kochi; Padmanabhaswamy Temple; Bekal Fort"],
+["MP","Madhya Pradesh","Bhopal",1956,"The heart of India, with Gupta, Paramara and Gond histories. The present state took shape in 1956.","Sanchi Stupa; Khajuraho; Gwalior Fort"],
+["MH","Maharashtra","Mumbai",1960,"Land of the Marathas and Chhatrapati Shivaji. Created in 1960 after the Samyukta Maharashtra movement.","Ajanta and Ellora; Raigad Fort; Gateway of India"],
+["MN","Manipur","Imphal",1972,"Ruled by the Meitei kings of the Ningthouja dynasty for centuries. It became a full state in 1972.","Kangla Fort; Loktak Lake; Ima Keithel"],
+["ML","Meghalaya","Shillong",1972,"Land of the Khasi, Garo and Jaintia peoples. It was carved out of Assam as an autonomous state in 1970 and a full state in 1972.","Living Root Bridges; Mawsynram; David Scott Trail"],
+["MZ","Mizoram","Aizawl",1987,"Mizo clans settled the hills in past centuries. The 1986 Peace Accord led to statehood in 1987.","Vantawng Falls; Reiek; Solomon’s Temple"],
+["NL","Nagaland","Kohima",1963,"Home to many Naga tribes. The Battle of Kohima in 1944 was a WWII turning point. It became the 16th state in 1963.","Kohima War Cemetery; Kisama Heritage Village; Dzukou Valley"],
+["OD","Odisha","Bhubaneswar",1936,"Ancient Kalinga, where Ashoka’s Kalinga War in 261 BCE changed his path. Odisha became a separate province in 1936.","Konark Sun Temple; Jagannath Temple; Udayagiri Caves"],
+["PB","Punjab","Chandigarh",1966,"Cradle of the Sikh faith and the Indus Valley sites. The state was reorganised in 1966 on linguistic lines.","Golden Temple; Jallianwala Bagh; Anandpur Sahib"],
+["RJ","Rajasthan","Jaipur",1956,"Land of the Rajput kingdoms such as Mewar and Marwar. Princely states merged in stages, completed in 1956.","Amer Fort; Chittorgarh; Kumbhalgarh"],
+["SK","Sikkim","Gangtok",1975,"Ruled by the Chogyal monarchy and a British protectorate. It joined India as the 22nd state in 1975.","Rumtek Monastery; Pemayangtse; Khangchendzonga"],
+["TN","Tamil Nadu","Chennai",1956,"Land of the Chola, Pandya and Pallava dynasties, with some of the oldest Tamil literature. Madras State was renamed Tamil Nadu in 1969.","Brihadisvara Temple; Mahabalipuram; Meenakshi Temple"],
+["TG","Telangana","Hyderabad",2014,"Ruled by the Kakatiyas and later the Nizams of Hyderabad. It became India’s 29th state on 2 June 2014.","Charminar; Golconda Fort; Ramappa Temple"],
+["TR","Tripura","Agartala",1972,"Ruled by the Manikya dynasty for centuries. It merged with India in 1949 and became a state in 1972.","Ujjayanta Palace; Neermahal; Unakoti"],
+["UP","Uttar Pradesh","Lucknow",1950,"Heart of the Gangetic plain, with Varanasi, Mughal Agra and the 1857 uprising. United Provinces was renamed Uttar Pradesh in 1950.","Taj Mahal; Varanasi Ghats; Sarnath"],
+["UK","Uttarakhand","Dehradun",2000,"The Katyuri and Chand dynasties ruled the Kumaon hills. It was separated from Uttar Pradesh in 2000.","Kedarnath; Badrinath; Jim Corbett Park"],
+["WB","West Bengal","Kolkata",1947,"Centre of the Bengal Renaissance and the colonial capital until 1911. Created in 1947 at Partition.","Victoria Memorial; Howrah Bridge; Dakshineswar Temple"]
+];
+// code: [how Diwali is marked, major festivals, local food]
+const D={
+AP:["Oil baths at dawn, rows of lamps and sweets such as ariselu mark Deepavali; Naraka Chaturdashi is observed.","Ugadi; Sankranti; Tirumala Brahmotsavam","Pesarattu, gongura pachadi"],
+AR:["Observed mainly by Hindu communities. Monpa Buddhists and tribal groups celebrate Losar and Solung instead.","Losar; Solung; Reh","Thukpa, apong rice beer"],
+AS:["Kali Puja is held on Diwali night, and sky lamps (akash banti) light up Kati Bihu evenings.","Bihu; Ambubachi Mela; Durga Puja","Masor tenga, pitha"],
+BR:["Lakshmi and Kali Puja on Diwali night, followed six days later by the grand Chhath Puja at river banks.","Chhath; Sama-Chakeva; Sonepur Mela","Litti chokha, thekua"],
+CG:["Tribal communities perform Gaura-Gauri, a folk rite honouring Shiva and Parvati, around Diwali.","Bastar Dussehra; Hareli; Madai","Chila, fara"],
+GA:["Giant effigies of the demon Narakasura are paraded and burnt before dawn on Naraka Chaturdashi.","Carnival; Shigmo; Feast of St Francis Xavier","Fish curry rice, bebinca"],
+GJ:["Diwali ends the year: the next day is Bestu Varas, the Gujarati New Year, with Chopda Pujan of account books.","Navratri Garba; Uttarayan; Rann Utsav","Dhokla, thepla, fafda"],
+HR:["Homes are lit with lamps and rangoli, and Govardhan Puja follows the next day.","Teej; Surajkund Mela; Gugga Navami","Bajra khichdi, kadhi"],
+HP:["Celebrated in the plains, while Sirmaur and parts of Kullu mark Budhi Diwali a month later with torch dances.","Kullu Dussehra; Minjar Fair; Losar","Siddu, dham"],
+JH:["Tribal communities celebrate Sohrai, a cattle and harvest festival with painted mud walls, around Diwali.","Sarhul; Karma; Sohrai","Dhuska, litti"],
+KA:["A pre-dawn oil bath on Naraka Chaturdashi, then lamps, cow worship and Balipadyami.","Mysuru Dasara; Ugadi; Karaga","Bisi bele bath, Mysore pak"],
+KL:["Less prominent than Onam and Vishu; observed mainly by Tamil and Konkani communities.","Onam; Vishu; Thrissur Pooram","Appam with stew, sadya"],
+MP:["A five-day festival of Lakshmi puja, rangoli and lamps across homes and markets.","Khajuraho Dance Festival; Bhagoriya; Ujjain Simhastha","Poha-jalebi, bhutte ka kees"],
+MH:["Starts with Vasu Baras, then Dhanteras, abhyanga snan, Padwa and Bhaubeej, with faral snacks like chakli and karanji.","Ganesh Chaturthi; Gudi Padwa; Pandharpur Wari","Vada pav, puran poli"],
+MN:["Observed by Hindu Meitei communities with lamps; Yaoshang and Lai Haraoba are larger local festivals.","Yaoshang; Lai Haraoba; Ningol Chakouba","Eromba, singju"],
+ML:["A minor festival here; Wangala and Nongkrem are the major celebrations.","Wangala; Nongkrem; Shad Suk Mynsiem","Jadoh, dohneiiong"],
+MZ:["Not a major festival; Chapchar Kut and Christmas shape the calendar.","Chapchar Kut; Mim Kut; Pawl Kut","Bai, sawhchiar"],
+NL:["Not a traditional festival; communities gather for the Hornbill Festival in December instead.","Hornbill Festival; Sekrenyi; Moatsu","Smoked pork with bamboo shoot"],
+OD:["Kali Puja is held, and families offer lit jute stalks to ancestors in the ritual Kauria Kathi.","Rath Yatra; Konark Dance Festival; Raja Parba","Pakhala, chhena poda"],
+PB:["Sikhs mark it as Bandi Chhor Divas, honouring Guru Hargobind’s release; the Golden Temple is lit with thousands of lamps.","Baisakhi; Lohri; Hola Mohalla","Makki di roti with sarson da saag"],
+RJ:["Forts and bazaars in Jaipur and Udaipur glow with lights; Govardhan Puja and Annakut follow.","Pushkar Fair; Teej; Gangaur","Dal baati churma, ghewar"],
+SK:["The Nepali community celebrates Tihar with Laxmi puja, honours for crows, dogs and cows, and Bhai Tika.","Losar; Saga Dawa; Pang Lhabsol","Momos, gundruk, sel roti"],
+TN:["Deepavali begins with an early oil bath, new clothes, sweets and crackers.","Pongal; Thaipusam; Chithirai Festival","Idli, dosa, pongal"],
+TG:["Comes soon after Bathukamma and Dussehra, with lamps and Lakshmi puja at home.","Bathukamma; Bonalu; Sammakka Sarakka Jatara","Hyderabadi biryani, haleem"],
+TR:["Marked with Kali Puja, and a Diwali fair is held at the Tripura Sundari Temple.","Kharchi Puja; Garia; Ker Puja","Mui borok, bamboo shoot dishes"],
+UP:["Ayodhya’s Deepotsav lights lakhs of lamps for Ram’s return, and Varanasi’s Dev Deepawali follows about two weeks later.","Kumbh Mela; Braj Holi; Dev Deepawali","Awadhi kebabs, petha"],
+UK:["Garhwal observes Igas, a second Diwali about eleven days later, with bonfires and folk songs.","Haridwar Kumbh; Nanda Devi Raj Jat; Harela","Kafuli, bal mithai"],
+WB:["Bengalis worship Goddess Kali on Diwali night, and Kolkata’s pandals and homes glow with lamps.","Durga Puja; Poila Boishakh; Poush Mela","Rosogolla, macher jhol"]
+};
+const extra=c=>{const d=D[c];return d?`<h3>Diwali here</h3><p>${esc(d[0])}</p><h3>Major festivals</h3><ul>${d[1].split(";").map(x=>`<li>${esc(x.trim())}</li>`).join("")}</ul><h3>Local flavours</h3><p>${esc(d[2])}</p>`:""};
+const $=id=>document.getElementById(id), byCode=Object.fromEntries(S.map(s=>[s[0],s]));
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function show(code){
+  const s=byCode[code]; if(!s) return false;
+  $('result').hidden=false;
+  $('result').innerHTML=`<h2>${esc(s[1])}</h2>
+  <div class="facts"><span>Capital<b>${esc(s[2])}</b></span><span>State formed<b>${s[3]}</b></span></div>
+  <p>${esc(s[4])}</p><h3>Places to see</h3><ul>${s[5].split(";").map(x=>`<li>${esc(x.trim())}</li>`).join("")}</ul>${extra(s[0])}`;
+  $('result').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});
+  return true;
+}
+// Accepts INDHIST:XX, a URL with ?state=XX, or a bare code/name
+function resolve(raw){
+  let t=String(raw).trim(), m=t.match(/INDHIST:([A-Za-z]{2})/i)||t.match(/[?&#]state=([A-Za-z]{2})/i);
+  if(m) return m[1].toUpperCase();
+  if(byCode[t.toUpperCase()]) return t.toUpperCase();
+  const f=S.find(s=>s[1].toLowerCase()===t.toLowerCase()); return f?f[0]:null;
+}
+function handle(raw){
+  const c=resolve(raw);
+  if(c&&show(c)){setMsg("Found "+byCode[c][1]+".");return true}
+  setMsg("That code isn’t a state in this app. Try another plaque.",true);return false;
+}
+function setMsg(t,e){$('msg').textContent=t;$('msg').className="msg"+(e?" err":"")}
+
+// Tabs
+const tabs={scan:'p-scan',browse:'p-browse',qr:'p-qr'};
+Object.keys(tabs).forEach(k=>$('t-'+k).onclick=()=>{
+  Object.keys(tabs).forEach(j=>{$('t-'+j).setAttribute('aria-selected',j===k);$(tabs[j]).hidden=j!==k});
+  if(k!=='scan')stop(); if(k==='qr')buildQR();
+});
+
+// Camera scanning
+let stream=null,raf=0;const v=$('video'),cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+async function start(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    v.srcObject=stream;await v.play();$('scanner').classList.add('on');$('startBtn').textContent='Stop camera';setMsg('Looking for a QR code…');tick();
+  }catch(e){setMsg('Camera unavailable. Allow access, or upload a QR image or type a code below.',true)}
+}
+function stop(){cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('scanner').classList.remove('on');$('startBtn').textContent='Start camera'}
+function tick(){
+  if(!stream)return;
+  if(v.readyState===v.HAVE_ENOUGH_DATA){
+    cv.width=v.videoWidth;cv.height=v.videoHeight;cx.drawImage(v,0,0);
+    const r=jsQR(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);
+    if(r&&r.data&&handle(r.data)){stop();return}
+  }
+  raf=requestAnimationFrame(tick);
+}
+$('startBtn').onclick=()=>stream?stop():start();
+$('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const img=new Image();
+  img.onload=()=>{cv.width=img.width;cv.height=img.height;cx.drawImage(img,0,0);
+    const r=jsQR(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);
+    r?handle(r.data):setMsg('No QR code found in that image.',true);URL.revokeObjectURL(img.src)};
+  img.src=URL.createObjectURL(f);e.target.value='';
+};
+$('goBtn').onclick=()=>handle($('manual').value);
+$('manual').onkeydown=e=>{if(e.key==='Enter')handle(e.target.value)};
+
+// Browse
+$('grid').innerHTML=S.map(s=>`<button data-c="${s[0]}">${esc(s[1])}<small>${esc(s[2])}</small></button>`).join("");
+$('grid').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.c)};
+
+// QR generator
+let built="";
+function buildQR(){
+  const base=$('base').value.trim();if(built===base)return;built=base;
+  const g=$('qrgrid');g.innerHTML="";
+  S.forEach(s=>{
+    const text=base?base+(base.includes('?')?'&':'?')+'state='+s[0]:'INDHIST:'+s[0];
+    const d=document.createElement('div');d.className='qr';d.innerHTML='<div></div><b>'+esc(s[1])+'</b><br><code>'+esc(text)+'</code>';
+    g.appendChild(d);new QRCode(d.firstChild,{text,width:130,height:130,correctLevel:QRCode.CorrectLevel.M});
+  });
+}
+if(/^https?:/.test(location.href))$('base').value=location.origin+location.pathname;
+$('base').oninput=()=>buildQR();
+$('printBtn').onclick=()=>window.print();
+
+// Deep link: ?state=GJ
+const q=new URLSearchParams(location.search).get('state');if(q)show(q.toUpperCase());
+</script>
+</body>
+</html>
